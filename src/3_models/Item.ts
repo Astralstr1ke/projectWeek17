@@ -12,11 +12,6 @@ export interface Item{
     timeLeft:Date;
     active: Boolean
     winner:string;
-
-    
-    
-    
-   
 };
 
   

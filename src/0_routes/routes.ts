@@ -67,14 +67,30 @@ const storage = multer.diskStorage({
   }
 });
 
+routes.get('/items/:ItemID', async (req, res) => {
+  const { ItemID } = req.params;
+  try { 
+    const item = await RedisClient.LRANGE(`items:${ItemID}`, 0, -1);
+    // Convert the stringified bids back to JSON objects
+    const itemObjects = item.map(item => JSON.parse(item));
+
+    res.status(200).json(itemObjects);
+  } catch (error) {
+    console.error('Error fetching bids:', error);
+    res.status(500).send('Error fetching bids');
+  }
+});
+
+routes.put('/items/updatePrice', async (req, res) =>{
+
+
+});
+
+
 routes.get('/items', async (req, res) => {
   try {
     // Store the item in a Redis list under the key items'
     const items = await RedisClient.LRANGE(`items`, 0, -1);
-    var length = await RedisClient.lLen('items');
-    var meme =items 
-    console.log(length)
-    console.log(meme)
     const ItemObjects = items.map(item => JSON.parse(item));
 
     res.status(200).json(ItemObjects);
@@ -83,6 +99,14 @@ routes.get('/items', async (req, res) => {
     res.status(500).send('Error retriving items');
   }
 });
+
+
+
+
+
+
+
+
 
 // #2
 // Som admin skal man kunne tilføje et billede til et allerede oprettet item.
@@ -115,16 +139,32 @@ routes.post('/upload/:itemID', upload.single('picture'), (req, res) => {
 // Som user skal man kunne se alle udbudte items
 //TODO Husk at billederne også skal med :-)
 routes.get('/bids/', async (req, res) => {
-  try { 
-    const bids = await RedisClient.LRANGE(`bids`,0,-1);
+  let maxIndexItems = await RedisClient.lLen('items');
+  console.log(maxIndexItems);
+  let bidKeys : Array<string> =[];
+  let base:string;
+  let bids;
+  let bidObjects: Array<Bid> =[];
+  console.log(bidKeys);
+  for (let i = 0; i < maxIndexItems; i++) 
+    {
+      base = "bids:"
+      base +=i;
+      bidKeys[i] = base;
+  }
+  console.log(bidKeys);
+  for (let j = 0; j < maxIndexItems; j++) 
+   {
+    bids = await RedisClient.LRANGE(bidKeys[j],0,-1);
+    console.log(bids);
+    bidObjects.push(bids.map(bid=> JSON.parse(bid)))
+    
+   }
+  
     // Convert the stringified bids back to JSON objects
-    const bidObjects = bids.map(bid => JSON.parse(bid));
 
     res.status(200).json(bidObjects);
-  } catch (error) {
-    console.error('Error fetching bids:', error);
-    res.status(500).send('Error fetching bids');
-  }
+
 });
 // #5
 // Som user skal man kunne tilmelde sig auktionen med sin email som brugernavn
