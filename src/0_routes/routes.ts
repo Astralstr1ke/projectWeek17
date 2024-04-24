@@ -70,7 +70,11 @@ const storage = multer.diskStorage({
 routes.get('/items', async (req, res) => {
   try {
     // Store the item in a Redis list under the key items'
-    const items = await RedisClient.LRANGE(`items}`, 0, -1);
+    const items = await RedisClient.LRANGE(`items`, 0, -1);
+    var length = await RedisClient.lLen('items');
+    var meme =items 
+    console.log(length)
+    console.log(meme)
     const ItemObjects = items.map(item => JSON.parse(item));
 
     res.status(200).json(ItemObjects);
@@ -112,7 +116,7 @@ routes.post('/upload/:itemID', upload.single('picture'), (req, res) => {
 //TODO Husk at billederne også skal med :-)
 routes.get('/bids/', async (req, res) => {
   try { 
-    const bids = await RedisClient.LRANGE(`bids:`,0,-1);
+    const bids = await RedisClient.LRANGE(`bids`,0,-1);
     // Convert the stringified bids back to JSON objects
     const bidObjects = bids.map(bid => JSON.parse(bid));
 
