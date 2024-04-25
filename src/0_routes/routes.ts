@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import cors from 'cors';
-import express from 'express';
+import express, { json } from 'express';
 import bodyParser from 'body-parser';
 import { RedisClient } from '../2_sessions/DB.js';
 import multer from 'multer';
@@ -218,12 +218,33 @@ routes.post('/bid', async (req, res) => {
      // Storing the bid in a Redis list under the key 'bids:[itemId]'
      await RedisClient.LPUSH(`bids:${bid.itemId}`, JSON.stringify(bid));
  
-     res.status(201).send('Bid placed successfully');
+     
    } catch (error) {
      console.error('Error placing bid:', error);
      res.status(500).send('Error placing bid');
    }
- });
+   let item:Item;
+   try{
+   const itemStr = await RedisClient.LINDEX('items',bid.itemId)
+   item = JSON.parse(itemStr);
+   } catch(error)
+   {
+    console.error('Error finding item:', error);
+     res.status(500).send('Error finding item');
+   }
+   
+   item.currentPrice = item.currentPrice + bid.value;
+   try{
+   await RedisClient.LSET('items',bid.itemId,JSON.stringify(item));
+   }
+   catch(error)
+   {
+    console.error('Error updating item:', error);
+     res.status(500).send('Error  updating item');
+   }
+   res.status(201).send('Bid placed successfully');
+   
+ });  
  
 
 
