@@ -70,10 +70,14 @@ const storage = multer.diskStorage({
 routes.get('/items/:ItemID', async (req, res) => {
   const { ItemID } = req.params;
   try { 
-    const item = await RedisClient.LRANGE(`items:${ItemID}`, 0, -1);
+    //await RedisClient.LRANGE(`items`, 0, -1);
+    console.log(ItemID);
+    const item = await RedisClient.LINDEX('items',parseInt(ItemID))
+    
+    console.log(item);
     // Convert the stringified bids back to JSON objects
-    const itemObjects = item.map(item => JSON.parse(item));
-
+    const itemObjects = JSON.parse(item);
+    console.log(itemObjects);
     res.status(200).json(itemObjects);
   } catch (error) {
     console.error('Error fetching bids:', error);
