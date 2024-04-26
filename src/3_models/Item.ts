@@ -5,7 +5,7 @@ export interface Item{
     artist: String;
     artTitle: String;
     description:string;
-    category: Enumerator;
+    category: number;
     startPrice:number;
     currentPrice:number;
     expiryDate:Date;

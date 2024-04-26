@@ -1,15 +1,17 @@
 import * as dotenv from 'dotenv';
 import cors from 'cors';
-import express, { json } from 'express';
+import express from 'express';
 import bodyParser from 'body-parser';
 import { RedisClient } from '../2_sessions/DB.js';
 import multer from 'multer';
 import fs from 'fs';
+import * as path from 'path';
+//const multers = require('multer');
+
 
 dotenv.config({ path: 'config/middleware.env' });
 
 const routes = express();
-
 routes.use(cors());
 routes.use(express.static('public'));
 
@@ -18,54 +20,90 @@ routes.use(bodyParser.json())
 
 import { Bid } from '../3_models/Bid.js';
 import { Item } from '../3_models/Item.js';
-import { AuctionEmailList } from '../3_models/AuctionEmail.js';
+
+
+routes.use(
+  "/images",
+  express.static(
+    path.join(path.dirname(new URL(import.meta.url).pathname), "../images")
+  )
+);
 
 const createDirectory = (dir: string) => {
-   try {
-     if (!fs.existsSync(dir)) {
-       fs.mkdirSync(dir, { recursive: true });
-     }
-   } catch (err) {
-     console.error(`Error creating directory '${dir}':`, err);
-     throw err; // Re-throw to handle it in the caller function
-   }
- };
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch (err) {
+    console.error(`Error creating directory '${dir}':`, err);
+    throw err; // Re-throw to handle it in the caller function
+  }
+};
 
- // Configure multer for file storage
- /*
+// Configure multer for file storage
 const storage = multer.diskStorage({
-   destination: (req, file, cb) => {
-     const dir = 'uploads';
-     try {
-       createDirectory(dir);
-       cb(null, dir);
-     } catch (err) {
-      console.error(`Error with '${dir}':`, err);
-     }
-   },
-   filename: (req, file, cb) => {
-     const itemID = req.params.itemID;
-     cb(null, `${itemID}.png`);
-   }
- });
- */
- const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = '/uploads'; // Change this to the directory path within your Docker container
+  destination: async (req, file, cb) => {
+    const dir = path.join(
+      path.dirname(new URL(import.meta.url).pathname),
+      "../images"
+    );
     try {
-      createDirectory(dir);
-      cb(null, dir);
+      await createDirectory(dir);
+      cb(null, dir); // callback with the directory to store files
     } catch (err) {
-     console.error(`Error with '${dir}':`, err);
+      console.error(`Error with '${dir}':`, err);
+      //cb(err); // pass errors to multer
     }
   },
   filename: (req, file, cb) => {
-    const itemID = req.params.itemID;
-    cb(null, `${itemID}.png`);
-  }
+    cb(null, file.originalname);
+  },
 });
 
- const upload = multer({ storage: storage });
+const upload = multer({ storage: storage });
+
+
+routes.post("/api/item", async(req, res) => {
+    // Generate a unique itemID by incrementing the key 'itemId'
+    const itemId = await RedisClient.INCR("itemId");
+
+    const item: Item = {
+      id: itemId,
+      //image: `roundhouse.proxy.rlwy.net:54600${req.file.originalname}`,
+      image:"meme",
+      title: req.body.title,
+      artist: req.body.artist,
+      artTitle: req.body.artTitle,
+      description: req.body.description,
+      startPrice:req.body.startPrice,
+      currentPrice: null,
+      category: req.body.category,
+      expiryDate:req.body.expiryDate,
+      timeLeft:req.body.timeLeft,
+      active: req.body.active,
+      winner: null,
+      
+
+      // Default items set to expire in 7 days
+      //expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      //active: true,
+    };
+
+    try {
+      // Store the item in a Redis list under the key items'
+      await RedisClient.LPUSH(`items`, JSON.stringify(item));
+
+      res.status(201).send("Item placed successfully");
+    } catch (error) {
+      console.error("Error placing item:", error);
+      res.status(500).send("Error placing item");
+    }
+  }
+);
+
+
+
+ 
 
 // #1	
 // Som admin skal man kunne tilføje et nyt item.
@@ -132,12 +170,24 @@ routes.get('/items', async (req, res) => {
 // #2
 // Som admin skal man kunne tilføje et billede til et allerede oprettet item.
 // Bemærk denne funktion skal måske være samlet med Item-oprettelsen
-routes.post('/upload/:itemID', upload.single('picture'), (req, res) => {
+routes.post('/upload/:itemID', upload.single('picture'), async (req, res) => {
+  console.log("step 1")
+  const { itemID } = req.params;
   try{
    if (!req.params.itemID) {
      return res.status(400).send('itemID is required');
    }
-   
+   console.log("step2")
+   console.log(itemID);
+   const itemStr = await RedisClient.LINDEX('items',parseInt(itemID))
+   console.log("step3")
+   let itemitem = JSON.parse(itemStr);
+   console.log("step4")
+   itemitem.image=`roundhouse.proxy.rlwy.net:54600${req.file.originalname}`;
+   console.log("step5")
+
+   RedisClient.LSET('items', itemitem.id,JSON.stringify(itemitem))
+
    res.status(201).send(`File uploaded successfully as ${req.params.itemID}.png`);
   }catch (error)
   {
@@ -196,7 +246,7 @@ routes.get('/bids/', async (req, res) => {
 // #5
 // Som user skal man kunne tilmelde sig auktionen med sin email som brugernavn
 // TODO
-
+/*
 routes.post('/upload/Auction/:ItemId', async (req, res) => {
   let item: AuctionEmailList = req.body;
   
@@ -210,6 +260,7 @@ routes.post('/upload/Auction/:ItemId', async (req, res) => {
     res.status(500).send('Error placing item');
   }
 });
+*/
 routes.get('/upload/Auction/:ItemId', async (req, res) => {
   const {ItemId} = req.params;
   try { 

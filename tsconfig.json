@@ -5,10 +5,13 @@
         "allowSyntheticDefaultImports":true,
         "target":"ES2022",
         "sourceMap": true,
-        "outDir": "dist"
+        "outDir": "dist",
+        "types": ["node","multer"]
+        
       
     },
     "include": [
         "src/**/*"
+        
     ]
 }
