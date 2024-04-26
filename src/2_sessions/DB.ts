@@ -1,13 +1,15 @@
 import redis from 'redis';
 import { createClient } from 'redis';
+
+const url = 'redis.railway.internal';
 /*
-const url = 'redis://127.0.0.1:6379';
 console.log("Session Reached")
 const RedisClient = redis.createClient({
     url,
     pingInterval: 4 * 60 * 1000
 });
 */
+/*
 const RedisClient = createClient({
     password: 'xfL1udKOrl9EPL5JmpYQdsvmgGyoD3pK',
     socket: {
@@ -15,8 +17,11 @@ const RedisClient = createClient({
         port: 17948
     }
 });
+*/
 
-
+const RedisClient = createClient({
+   url
+});
 /*
 RedisClient.on('error', err => console.log(`Success Message and variables: ${err}`));
 RedisClient.on('reconnecting', params => console.log(`Error Message : ${params}`));

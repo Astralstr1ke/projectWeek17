@@ -32,9 +32,10 @@ const createDirectory = (dir: string) => {
  };
 
  // Configure multer for file storage
+ /*
 const storage = multer.diskStorage({
    destination: (req, file, cb) => {
-     const dir = './uploads';
+     const dir = 'uploads';
      try {
        createDirectory(dir);
        cb(null, dir);
@@ -47,7 +48,23 @@ const storage = multer.diskStorage({
      cb(null, `${itemID}.png`);
    }
  });
- 
+ */
+ const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = '/uploads'; // Change this to the directory path within your Docker container
+    try {
+      createDirectory(dir);
+      cb(null, dir);
+    } catch (err) {
+     console.error(`Error with '${dir}':`, err);
+    }
+  },
+  filename: (req, file, cb) => {
+    const itemID = req.params.itemID;
+    cb(null, `${itemID}.png`);
+  }
+});
+
  const upload = multer({ storage: storage });
 
 // #1	
@@ -116,12 +133,18 @@ routes.get('/items', async (req, res) => {
 // Som admin skal man kunne tilføje et billede til et allerede oprettet item.
 // Bemærk denne funktion skal måske være samlet med Item-oprettelsen
 routes.post('/upload/:itemID', upload.single('picture'), (req, res) => {
+  try{
    if (!req.params.itemID) {
      return res.status(400).send('itemID is required');
    }
- 
-   res.send(`File uploaded successfully as ${req.params.itemID}.png`);
+   
+   res.status(201).send(`File uploaded successfully as ${req.params.itemID}.png`);
+  }catch (error)
+  {
+    console.log(error);
+  }
  });
+ 
 
 // #3
  // Som admin skal man kunne se hvilken bruger der har budt på hvert enkelt item, mens auktionen forløb.
