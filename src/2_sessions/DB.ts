@@ -1,7 +1,7 @@
 import redis from 'redis';
 import { createClient } from 'redis';
 
-const url = 'redis.railway.internal';
+//const url = 'redis.railway.internal';
 /*
 console.log("Session Reached")
 const RedisClient = redis.createClient({
@@ -9,7 +9,7 @@ const RedisClient = redis.createClient({
     pingInterval: 4 * 60 * 1000
 });
 */
-/*
+
 const RedisClient = createClient({
     password: 'xfL1udKOrl9EPL5JmpYQdsvmgGyoD3pK',
     socket: {
@@ -17,8 +17,8 @@ const RedisClient = createClient({
         port: 17948
     }
 });
-*/
 
+/*
 const RedisClient = createClient({
    url
 });
